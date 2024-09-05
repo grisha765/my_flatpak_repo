@@ -40,7 +40,7 @@ jobs:
         set -e
         mkdir -p ./${{ env.PAGES_REPO }}/repo
         for file in *.yml; do
-          flatpak-builder --disable-updates --disable-download --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
+          flatpak-builder --force-clean --disable-updates --disable-download --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
         done
     
     - name: Create Flatpak repository metadata
