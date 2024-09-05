@@ -16,6 +16,7 @@ jobs:
     
     - name: Build Flatpak with flatpak-builder
       run: |
+        mkdir -p ./repo/repo
         flatpak-builder --repo=./repo/repo build-dir org.flatpak.Hello.yml
     
     - name: Create Flatpak repository metadata
@@ -24,7 +25,6 @@ jobs:
 
     - name: Write .flatpakrepo file
       run: |
-          set -e
           echo "[Flatpak Repo]
           Title=https://grisha765.github.io/my_flatpak_repo/repo
           Url=https://grisha765.github.io/my_flatpak_repo/repo > repo/${{ github.repository_owner }}.flatpakrepo
