@@ -10,7 +10,6 @@ env:
     FLATPAK_HISTORY_LEN: 0
     FLATPAK_DELTAS: true
      
-    FLATPAK_SRC: src-dir
     FLATPAK_BUILD: build-dir
     PAGES_REPO: repo-dir
 
