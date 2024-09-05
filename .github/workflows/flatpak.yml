@@ -1,7 +1,13 @@
 on:
   push:
     branches: [main]
+    paths:
+      - '**/*.yml'
+      - '!.github/**'
   pull_request:
+    paths:
+      - '**/*.yml'
+      - '!.github/**'
 
 name: CI
 
@@ -14,9 +20,37 @@ env:
     PAGES_REPO: repo-dir
 
 jobs:
-  flatpak:
-    name: "Flatpak"
+  detect-yml-files:
+    name: "Detect YML files"
     runs-on: ubuntu-latest
+    outputs:
+      yml_files: ${{ steps.get_yml_files.outputs.yml_files }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get list of changed YML files
+      id: get_yml_files
+      run: |
+        # Get all changed .yml files between the current commit and the previous one
+        yml_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.yml' ':!.github/**')
+        echo "Changed YML files: $yml_files"
+        if [ -z "$yml_files" ]; then
+          echo "No .yml files have changed. Skipping."
+          exit 0
+        fi
+        # Convert space-separated filenames to JSON array for matrix
+        yml_files_json=$(echo "$yml_files" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        echo "::set-output name=yml_files::$yml_files_json"
+
+  build:
+    name: "Build Flatpak Manifests"
+    needs: detect-yml-files
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJSON(needs.detect-yml-files.outputs.yml_files) }}
+      fail-fast: false
     container:
       image: bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
       options: --privileged
@@ -32,17 +66,15 @@ jobs:
 
     - name: Prepare GPG-pubkey
       run: |
-          set -e
-          gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
-    
-    - name: Build Flatpak with flatpak-builder
+        set -e
+        gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
+
+    - name: Build Flatpak for ${{ matrix.file }}
       run: |
         set -e
         mkdir -p ./${{ env.PAGES_REPO }}/repo
-        for file in *.yml; do
-          flatpak-builder --force-clean --disable-updates --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
-        done
-    
+        flatpak-builder --force-clean --disable-updates --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "${{ matrix.file }}"
+
     - name: Create Flatpak repository metadata
       run: |
         set -e
@@ -51,21 +83,21 @@ jobs:
         flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./${{ env.PAGES_REPO }}/repo
         flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./${{ env.PAGES_REPO }}/repo
 
-    - name: Write .flatpakrepo file
+    - name: Write .flatpakrepo file for ${{ matrix.file }}
       run: |
-          set -e
-          cat > ${{ env.PAGES_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
-          [Flatpak Repo]
-          Title=${{ env.PAGES_REPO_URL }}
-          Url=https://${{ env.PAGES_REPO_URL }}repo/
-          GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
-          EOF
+        set -e
+        cat > ${{ env.PAGES_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
+        [Flatpak Repo]
+        Title=${{ env.PAGES_REPO_URL }}
+        Url=https://${{ env.PAGES_REPO_URL }}repo/
+        GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
+        EOF
 
-    - name: Deploy Repo
+    - name: Deploy Repo for ${{ matrix.file }}
       uses: peaceiris/actions-gh-pages@v3
       with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.PAGES_REPO }}
-          enable_jekyll: true
-          force_orphan: true
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ${{ env.PAGES_REPO }}
+        enable_jekyll: true
+        force_orphan: true
 
