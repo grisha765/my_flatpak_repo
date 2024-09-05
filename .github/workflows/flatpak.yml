@@ -39,11 +39,8 @@ jobs:
       run: |
         set -e
         mkdir -p ./${{ env.PAGES_REPO }}/repo
-        find . -name "*.yml" | while read yml_file; do
-          flatpak-builder --disable-updates --disable-download --ccache --sandbox \
-            --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} \
-            --repo=./${{ env.PAGES_REPO }}/repo \
-            ${{ env.FLATPAK_BUILD }} "$yml_file"
+        for file in *.yml; do
+          flatpak-builder --disable-updates --disable-download --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
         done
     
     - name: Create Flatpak repository metadata
