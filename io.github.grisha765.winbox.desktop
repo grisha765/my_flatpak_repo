@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Winbox
+GenericName=Winbox is a small utility that allows the administration of MikroTik RouterOS using a fast and simple GUI.
+Comment=Winbox is a small utility that allows the administration of MikroTik RouterOS using a fast and simple GUI.
+Icon=io.github.grisha765.winbox
+TryExec=winbox.sh
+Exec=winbox.sh %U
+Terminal=false
+StartupWMClass=Winbox
