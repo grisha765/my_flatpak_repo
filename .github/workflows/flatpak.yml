@@ -16,24 +16,24 @@ jobs:
     
     - name: Build Flatpak with flatpak-builder
       run: |
-        flatpak-builder --repo=repo build-dir org.flatpak.Hello.yml
+        flatpak-builder --repo=./repo/repo build-dir org.flatpak.Hello.yml
     
     - name: Create Flatpak repository metadata
       run: |
-        flatpak build-update-repo --prune --generate-static-deltas repo
-    
-    - name: Set up Git
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
+        flatpak build-update-repo --prune --generate-static-deltas ./repo/repo
 
-    - name: Push to gh-pages
+    - name: Write .flatpakrepo file
       run: |
-        git clone --depth 1 --branch gh-pages https://github.com/${{ github.repository }} gh-pages
-        rsync -av --delete repo/ gh-pages/repo/
-        cd gh-pages
-        touch .nojekyll
-        git add .
-        git commit -m "Update Flatpak repository"
-        git push https://github.com/${{ github.repository }} gh-pages
+          set -e
+          echo "[Flatpak Repo]
+          Title=https://grisha765.github.io/my_flatpak_repo/repo
+          Url=https://grisha765.github.io/my_flatpak_repo/repo > repo/${{ github.repository_owner }}.flatpakrepo
+    
+    - name: Deploy Repo
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: repo
+          enable_jekyll: true
+          force_orphan: true
 
