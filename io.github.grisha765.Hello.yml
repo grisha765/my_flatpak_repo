@@ -1,4 +1,4 @@
-id: org.flatpak.Hello
+id: io.github.grisha765.Hello
 runtime: org.freedesktop.Platform
 runtime-version: '23.08'
 sdk: org.freedesktop.Sdk
