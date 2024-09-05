@@ -1,6 +1,4 @@
 id: io.github.grisha765.winbox
-base: org.winehq.Wine
-base-version: stable-23.08
 runtime: org.freedesktop.Platform
 runtime-version: '23.08'
 sdk: org.freedesktop.Sdk
@@ -19,11 +17,29 @@ add-extensions:
     directory: lib/i386-linux-gnu
     version: '23.08'
 
-  org.winehq.Wine.mono:
-    directory: share/wine/mono
-    bundle: true
-
 modules:
+  - name: wine64
+    buildsystem: simple
+    build-commands:
+      - mkdir -p build
+      - cd build
+      - ../wine64/configure --prefix=/app --libdir=/app/lib --with-x --enable-win64
+      - make -j$(nproc)
+      - make install
+    sources:
+      - type: archive
+        url: https://dl.winehq.org/wine/source/9.0/wine-9.0.tar.xz
+        sha256: 7cfd090a5395f5b76d95bb5defac8a312c8de4c070c1163b8b58da38330ca6ee
+
+  - name: wine-mono
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 wine-mono-8.0.0-x86.msi /app/share/wine/mono/wine-mono.msi
+    sources:
+      - type: file
+        url: https://dl.winehq.org/wine/wine-mono/9.0.0/wine-mono-9.0.0-x86.msi
+        sha256: 79f6c43100675566c112f4199b9ea7b944d338164b34bd91fa11b0b0a414e1c4
+
   - name: winbox
     buildsystem: simple
     build-commands:
