@@ -60,3 +60,4 @@ modules:
       - type: archive
         url: https://dl.winehq.org/wine/source/9.0/wine-9.0.tar.xz
         sha256: 7cfd090a5395f5b76d95bb5defac8a312c8de4c070c1163b8b58da38330ca6ee
+
