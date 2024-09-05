@@ -71,6 +71,12 @@ jobs:
         set -e
         gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
+    - name: Install dependencies
+      run: |
+        set -e
+        flatpak remote-add flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install --user flathub org.winehq.Wine//stable-23.08
+
     - name: Build Flatpak for ${{ matrix.file }}
       run: |
         set -e
