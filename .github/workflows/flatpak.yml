@@ -25,10 +25,12 @@ jobs:
 
     - name: Write .flatpakrepo file
       run: |
-          echo "[Flatpak Repo]
+          cat > repo/${{ github.repository_owner }}.flatpakrepo << EOF 
+          [Flatpak Repo]
           Title=https://grisha765.github.io/my_flatpak_repo/repo
-          Url=https://grisha765.github.io/my_flatpak_repo/repo > repo/${{ github.repository_owner }}.flatpakrepo
-    
+          Url=https://grisha765.github.io/my_flatpak_repo/repo
+          EOF
+
     - name: Deploy Repo
       uses: peaceiris/actions-gh-pages@v3
       with:
