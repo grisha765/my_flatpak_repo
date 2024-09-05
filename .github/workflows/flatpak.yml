@@ -4,6 +4,16 @@ on:
   pull_request:
 
 name: CI
+
+env:
+    PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+    FLATPAK_HISTORY_LEN: 0
+    FLATPAK_DELTAS: true
+     
+    FLATPAK_SRC: src-dir
+    FLATPAK_BUILD: build-dir
+    PAGES_REPO: repo-dir
+
 jobs:
   flatpak:
     name: "Flatpak"
@@ -13,29 +23,48 @@ jobs:
       options: --privileged
     steps:
     - uses: actions/checkout@v4
+
+    - name: Import GPG-key
+      id: gpg-key
+      uses: crazy-max/ghaction-import-gpg@v5
+      with:
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+    - name: Prepare GPG-pubkey
+      run: |
+          set -e
+          gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
     
     - name: Build Flatpak with flatpak-builder
       run: |
-        mkdir -p ./repo/repo
-        flatpak-builder --repo=./repo/repo build-dir org.flatpak.Hello.yml
+        set -e
+        mkdir -p ./${{ env.PAGES_REPO }}/repo
+        flatpak-builder --disable-updates --disable-download --ccache --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} org.flatpak.Hello.yml
     
     - name: Create Flatpak repository metadata
       run: |
-        flatpak build-update-repo --prune --generate-static-deltas ./repo/repo
+        set -e
+        mkdir -p ./${{ env.PAGES_REPO }}/repo/refs/remotes ./${{ env.PAGES_REPO }}/repo/refs/mirrors
+        touch ./${{ env.PAGES_REPO }}/repo/refs/remotes/.gitkeep ./${{ env.PAGES_REPO }}/repo/refs/mirrors/.gitkeep
+        flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./${{ env.PAGES_REPO }}/repo
+        flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./${{ env.PAGES_REPO }}/repo
 
     - name: Write .flatpakrepo file
       run: |
-          cat > repo/${{ github.repository_owner }}.flatpakrepo << EOF 
+          set -e
+          cat > ${{ env.PAGES_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
           [Flatpak Repo]
-          Title=https://grisha765.github.io/my_flatpak_repo/repo
-          Url=https://grisha765.github.io/my_flatpak_repo/repo
+          Title=${{ env.PAGES_REPO_URL }}
+          Url=https://${{ env.PAGES_REPO_URL }}repo/
+          GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
           EOF
 
     - name: Deploy Repo
       uses: peaceiris/actions-gh-pages@v3
       with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: repo
+          publish_dir: ${{ env.PAGES_REPO }}
           enable_jekyll: true
           force_orphan: true
 
