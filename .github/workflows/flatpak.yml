@@ -74,7 +74,7 @@ jobs:
     - name: Install dependencies
       run: |
         set -e
-        flatpak install flathub org.winehq.Wine//stable-23.08
+        flatpak install flathub org.winehq.Wine//stable-23.08 -y
 
     - name: Build Flatpak for ${{ matrix.file }}
       run: |
