@@ -7,7 +7,7 @@ DISCLAIMER: Please use this software only if you have an active Photoshop subscr
 flatpak install grisha765-repo io.github.grisha765.Photoshop
 ```
 2) Launching the package:
-*It is better to launch the package for the first time through the terminal to see the progress of creating the prefix.*
+~~*It is better to launch the package for the first time through the terminal to see the progress of creating the prefix.*~~
 ```bash
 flatpak run io.github.grisha765.Photoshop
 ```
