@@ -1,7 +1,11 @@
 on:
   push:
     branches: [main]
+    paths:
+      - '**/*.yml'
   pull_request:
+    paths:
+      - '**/*.yml'
 
 name: CI
 
