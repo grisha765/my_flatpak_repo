@@ -13,6 +13,7 @@ finish-args:
   - --device=dri
   - --share=network
   - --allow=multiarch
+  - --filesystem=home
 
 inherit-extensions:
   - org.winehq.Wine.gecko
