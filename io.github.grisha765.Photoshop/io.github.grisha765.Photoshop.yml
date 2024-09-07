@@ -40,40 +40,141 @@ modules:
         dest-filename: photoshop.sh
         commands:
           - export WINEPREFIX="$XDG_DATA_HOME/wine"
+          - PROGRESS_FILE="$WINEPREFIX/.wineprefix_progress_create"
+          - STATE_FILE="$WINEPREFIX/.wine_virtual_desktop_state"
+          - |
+            update_progress() {
+                local stage=$1
+                local progress=$2
+                echo "$progress"
+                echo "# $stage"
+            }
+          - |
+            save_progress() {
+                local progress=$1
+                echo "$progress" > "$PROGRESS_FILE"
+            }
           - |
             if [ ! -d "$WINEPREFIX" ]; then
-              echo "Init prefix..."
-              wineboot
-              /app/bin/winetricks win11
-              /app/bin/winetricks fontsmooth=rgb gdiplus msxml3 msxml6 atmlib corefonts dxvk win11 vkd3d
-              /app/bin/winetricks -q vcrun2013 vcrun2015 vcrun2017 vcrun2019
-              winecfg -v win11
-            else
-              echo "The prefix is already initialized, skip the initialization step."
+                mkdir -p "$WINEPREFIX"
             fi
-          - STATE_FILE=$WINEPREFIX/.wine_virtual_desktop_state
           - |
-            if [ -f $STATE_FILE ]; then
-                CURRENT_STATE=$(cat $STATE_FILE)
+            if [ ! -f "$PROGRESS_FILE" ]; then
+                echo "0" > "$PROGRESS_FILE"
+            fi
+          - CURRENT_PROGRESS=$(cat "$PROGRESS_FILE")
+          - |
+            if [ "$CURRENT_PROGRESS" -eq 100 ]; then
+                echo "The prefix is already fully initialized, skipping initialization."
+            else
+                (
+                if [ "$CURRENT_PROGRESS" -lt 10 ]; then
+                    update_progress "Initializing wineboot..." 10
+                    wineboot || exit 1
+                    save_progress 10
+                fi
+                
+                if [ "$CURRENT_PROGRESS" -lt 20 ]; then
+                    update_progress "Setting Windows version to Windows 11..." 20
+                    winetricks win11 || exit 1
+                    save_progress 20
+                fi
+                
+                if [ "$CURRENT_PROGRESS" -lt 25 ]; then
+                    update_progress "Installing fontsmooth=rgb..." 25
+                    winetricks fontsmooth=rgb || exit 1
+                    save_progress 25
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 30 ]; then
+                    update_progress "Installing gdiplus..." 30
+                    winetricks gdiplus || exit 1
+                    save_progress 30
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 35 ]; then
+                    update_progress "Installing msxml3..." 35
+                    winetricks msxml3 || exit 1
+                    save_progress 35
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 40 ]; then
+                    update_progress "Installing msxml6..." 40
+                    winetricks msxml6 || exit 1
+                    save_progress 40
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 45 ]; then
+                    update_progress "Installing atmlib..." 45
+                    winetricks atmlib || exit 1
+                    save_progress 45
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 50 ]; then
+                    update_progress "Installing corefonts..." 50
+                    winetricks corefonts || exit 1
+                    save_progress 50
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 55 ]; then
+                    update_progress "Installing dxvk..." 55
+                    winetricks dxvk || exit 1
+                    save_progress 55
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 60 ]; then
+                    update_progress "Installing vkd3d..." 60
+                    winetricks vkd3d || exit 1
+                    save_progress 60
+                fi
+                
+                if [ "$CURRENT_PROGRESS" -lt 70 ]; then
+                    update_progress "Installing vcrun2013..." 70
+                    winetricks -q vcrun2013 || exit 1
+                    save_progress 70
+                fi
+
+                if [ "$CURRENT_PROGRESS" -lt 80 ]; then
+                    update_progress "Installing vcrun2019..." 80
+                    winetricks -q vcrun2019 || exit 1
+                    save_progress 80
+                fi
+                
+                if [ "$CURRENT_PROGRESS" -lt 100 ]; then
+                    update_progress "Finalizing configuration with winecfg..." 100
+                    winecfg -v win11 || exit 1
+                    save_progress 100
+                fi
+                
+                ) | zenity --progress --title="Configuring Wine Prefix" --text="Starting..." --percentage=$CURRENT_PROGRESS --auto-close --auto-kill --cancel-label="Cancel"
+
+                if [ $? -ne 0 ]; then
+                    echo "User canceled the process."
+                    exit 1
+                fi
+            fi
+          - |
+            if [ -f "$STATE_FILE" ]; then
+                CURRENT_STATE=$(cat "$STATE_FILE")
             else
                 CURRENT_STATE=0
             fi
-          - |
-            if [ -z $DESKTOP_SIZE ]; then
-                if [ $CURRENT_STATE = "0" ]; then
+
+            if [ -z "$DESKTOP_SIZE" ]; then
+                if [ "$CURRENT_STATE" = "0" ]; then
                     echo "Virtual desktop is already disabled. No changes needed."
                 else
                     echo "Disabling virtual desktop..."
-                    /app/bin/winetricks vd=off
+                    winetricks vd=off
                     echo 0 > "$STATE_FILE"
                 fi
             else
-                if [ $CURRENT_STATE = $DESKTOP_SIZE ]; then
+                if [ "$CURRENT_STATE" = "$DESKTOP_SIZE" ]; then
                     echo "Virtual desktop is already set to $DESKTOP_SIZE. No changes needed."
                 else
                     echo "Setting virtual desktop to $DESKTOP_SIZE..."
-                    /app/bin/winetricks vd=$DESKTOP_SIZE
-                    echo $DESKTOP_SIZE > $STATE_FILE
+                    winetricks vd="$DESKTOP_SIZE"
+                    echo "$DESKTOP_SIZE" > "$STATE_FILE"
                 fi
             fi
           - FILE_PATH=$(winepath -w "$1")
