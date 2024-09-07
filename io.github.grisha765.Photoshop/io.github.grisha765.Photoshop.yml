@@ -159,7 +159,7 @@ modules:
             else
                 CURRENT_STATE=0
             fi
-
+          - |
             if [ -z "$DESKTOP_SIZE" ]; then
                 if [ "$CURRENT_STATE" = "0" ]; then
                     echo "Virtual desktop is already disabled. No changes needed."
