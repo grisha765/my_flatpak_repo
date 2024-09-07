@@ -177,8 +177,14 @@ modules:
                     echo "$DESKTOP_SIZE" > "$STATE_FILE"
                 fi
             fi
-          - FILE_PATH=$(winepath -w "$1")
-          - DXVK_LOG_PATH=$WINEPREFIX DXVK_STATE_CACHE_PATH=$WINEPREFIX wine64 /app/photoshop/photoshop.exe $FILE_PATH
+          - CURRENT_PROGRESS=$(cat "$PROGRESS_FILE")
+          - |
+            if [ "$CURRENT_PROGRESS" -eq 100 ]; then
+                FILE_PATH=$(winepath -w "$1")
+                DXVK_LOG_PATH=$WINEPREFIX DXVK_STATE_CACHE_PATH=$WINEPREFIX wine64 /app/photoshop/photoshop.exe $FILE_PATH
+            else
+                echo "The prefix not fully created, skipping launch."
+            fi
       - type: archive
         url: https://github.com/jolygmanka/filehost/releases/download/addfile1/linux_editor.tar.xz
         sha256: 8321b969161f2d2ad736067320d493c5b6ae579eaab9400cd1fda6871af2c033
