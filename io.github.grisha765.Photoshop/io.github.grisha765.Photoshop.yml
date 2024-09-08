@@ -34,7 +34,7 @@ modules:
       - install -Dm755 winetricks /app/bin/winetricks
       - install -Dm755 io.github.grisha765.Photoshop.desktop /app/share/applications/io.github.grisha765.Photoshop.desktop
       - mkdir -p /app/photoshop
-      - cp -r * /app/photoshop
+      - mv * /app/photoshop
     sources:
       - type: script
         dest-filename: photoshop.sh
