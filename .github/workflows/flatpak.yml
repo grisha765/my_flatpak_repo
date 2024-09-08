@@ -26,6 +26,8 @@ jobs:
       options: --privileged
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
 
     - name: Import GPG-key
       id: gpg-key
@@ -43,6 +45,8 @@ jobs:
       run: |
         set -e
         flatpak install flathub org.winehq.Wine//stable-23.08 -y
+        flatpak install flathub org.freedesktop.Platform/x86_64/22.08 -y
+        flatpak install flathub org.freedesktop.Sdk/x86_64/22.08 -y
     
     - name: Build Flatpak with flatpak-builder
       run: |
