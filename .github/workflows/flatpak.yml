@@ -45,18 +45,19 @@ jobs:
           set -e
           gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
-    - name: Install dependencies
+    - name: Install flatpak
       run: |
         set -e
-        flatpak install flathub org.winehq.Wine//stable-23.08 -y
-        flatpak install flathub org.freedesktop.Platform/x86_64/22.08 -y
-        flatpak install flathub org.freedesktop.Sdk/x86_64/22.08 -y
+        sudo apt update -y
+        sudo apt install -y flatpak flatpak-builder
+        flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     
     - name: Build Flatpak with flatpak-builder
       run: |
         set -e
         mkdir -p ./${{ env.PAGES_REPO }}/repo
         find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
+          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
           flatpak-builder --force-clean --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
         done
     
