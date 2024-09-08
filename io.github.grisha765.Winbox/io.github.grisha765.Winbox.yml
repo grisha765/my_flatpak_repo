@@ -1,4 +1,4 @@
-id: io.github.grisha765.winbox
+id: io.github.grisha765.Winbox
 runtime: org.freedesktop.Platform
 base: org.winehq.Wine
 base-version: stable-23.08
@@ -30,8 +30,8 @@ modules:
     build-commands:
       - install -Dm755 winbox.sh /app/bin/winbox.sh
       - install -Dm755 winbox64.exe /app/bin/winbox.exe
-      - install -Dm644 io.github.grisha765.winbox.svg /app/share/icons/hicolor/scalable/apps/io.github.grisha765.winbox.svg
-      - install -Dm755 io.github.grisha765.winbox.desktop /app/share/applications/io.github.grisha765.winbox.desktop
+      - install -Dm644 io.github.grisha765.Winbox.svg /app/share/icons/hicolor/scalable/apps/io.github.grisha765.Winbox.svg
+      - install -Dm755 io.github.grisha765.Winbox.desktop /app/share/applications/io.github.grisha765.Winbox.desktop
     sources:
       - type: script
         dest-filename: winbox.sh
@@ -42,8 +42,8 @@ modules:
         url: https://download.mikrotik.com/routeros/winbox/3.41/winbox64.exe
         sha256: 8bc3ecf1f35952600ecb1a380c38c88e9d63c081a32204fd094d588230070bf6
       - type: file 
-        path: io.github.grisha765.winbox.svg
+        path: io.github.grisha765.Winbox.svg
       - type: file
-        path: io.github.grisha765.winbox.desktop
+        path: io.github.grisha765.Winbox.desktop
 
 
