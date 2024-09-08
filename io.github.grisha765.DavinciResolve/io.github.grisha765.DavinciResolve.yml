@@ -92,6 +92,7 @@ modules:
 
                 echo "Extract file..."
                 unzip resolve.zip -d .
+                rm resolve.zip
             }
           - APP_TAG="davinci-resolve"
           - DOWNLOAD_ID=$(get_latest_version_information "$APP_TAG")
@@ -110,6 +111,7 @@ modules:
               APP_DESCRIPTION="DaVinci Resolve Studio"
             fi
           - ./DaVinci_Resolve_*_Linux.run --appimage-extract 2>&1
+          - rm ./DaVinci_Resolve_*_Linux.run
           - find squashfs-root -type f -exec chmod a+r,u+w {} \;
           - find squashfs-root -type d -exec chmod a+rx,u+w {} \;
           - mkdir -p ${PREFIX}/easyDCP ${PREFIX}/scripts ${PREFIX}/share ${PREFIX}/Fairlight ${PREFIX}/share/applications ${PREFIX}/share/icons/hicolor/128x128/apps ${PREFIX}/share/icons/hicolor/256x256/apps
