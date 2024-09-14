@@ -58,7 +58,7 @@ jobs:
         mkdir -p ./${{ env.PAGES_REPO }}/repo
         find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
-          flatpak-builder --force-clean --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
+          flatpak-builder --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
         done
     
     - name: Create Flatpak repository metadata
