@@ -1,3 +1,6 @@
 [submodule "shared-modules"]
 	path = shared-modules
 	url = https://github.com/flathub/shared-modules.git
+[submodule "io.github.tdesktop_x64.TDesktop/desktop-app-patches"]
+	path = io.github.tdesktop_x64.TDesktop/desktop-app-patches
+	url = https://github.com/desktop-app/patches.git
