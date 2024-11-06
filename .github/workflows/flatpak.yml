@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - '**/*.yml'
+  workflow_dispatch:
 
 name: CI
 
