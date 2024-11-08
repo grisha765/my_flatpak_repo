@@ -19,8 +19,7 @@ env:
     PAGES_REPO: repo-dir
 
 jobs:
-  flatpak:
-    name: "Flatpak"
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Maximize build space
@@ -81,11 +80,18 @@ jobs:
           GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
           EOF
 
-    - name: Deploy Repo
-      uses: peaceiris/actions-gh-pages@v3
+    - name: Upload flatpak repo
+      uses: actions/upload-artifact@v3
       with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.PAGES_REPO }}
-          enable_jekyll: true
-          force_orphan: true
+        name: repo
+        path: repo
 
+  deploy:
+    runs-on: larga-serv
+    needs: build
+    steps:
+    - name: Download flatpak repo
+      uses: actions/download-artifact@v3
+      with:
+        name: repo
+        path: /usr/share/nginx/html
