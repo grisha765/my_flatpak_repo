@@ -84,7 +84,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: repo
-        path: repo
+        path: ${{ env.PAGES_REPO }}
 
   deploy:
     runs-on: larga-serv
