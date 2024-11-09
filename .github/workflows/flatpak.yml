@@ -26,6 +26,7 @@ jobs:
     outputs:
       full_names: ${{ steps.find_manifests.outputs.full_names }}
       short_names: ${{ steps.find_manifests.outputs.short_names }}
+      names_map: ${{ steps.find_manifests.outputs.names_map }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,16 +39,20 @@ jobs:
           rm -rf io.github.tdesktop_x64.TDesktop
           full_names=$(find . -type f -name '*.yml' -not -path './.github/*' | xargs -n 1 basename | sed 's/\.yml$//' | jq -R -s -c 'split("\n")[:-1]')
           short_names=$(echo "$full_names" | jq -r '.[] | split(".") | last' | jq -R -s -c 'split("\n")[:-1]')
+          names_map=$(jq -n \
+            --argjson full_names "$full_names" \
+            --argjson short_names "$short_names" \
+            '[range(0; $full_names | length) as $i | { "full_name": $full_names[$i], "short_name": $short_names[$i] }]' | jq -c .)
           echo "full_names=$full_names" >> $GITHUB_OUTPUT
           echo "short_names=$short_names" >> $GITHUB_OUTPUT
+          echo "names_map=$names_map" >> $GITHUB_OUTPUT
 
   build_manifest:
     needs: build_jobs
     strategy:
       matrix:
-        full_names: ${{ fromJson(needs.build_jobs.outputs.full_names) }}
-        short_names: ${{ fromJson(needs.build_jobs.outputs.short_names) }}
-    name: Build ${{ matrix.short_names }}
+        include: ${{ fromJson(needs.build_jobs.outputs.names_map) }}
+    name: Build ${{ matrix.short_name }}
     runs-on: ubuntu-latest
     steps:
       - name: Maximize build space
@@ -79,14 +84,14 @@ jobs:
       - name: Build Flatpak with flatpak-builder
         run: |
           set -e
-          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_names }}/${{ matrix.full_names }}.yml"
-          flatpak-builder --delete-build-dirs --build-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_names }}/${{ matrix.full_names }}.yml"
+          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
+          flatpak-builder --delete-build-dirs --build-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           rm -rf ${{ env.FLATPAK_BUILD }}/var
 
       - name: Upload flatpak package
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.short_names }}
+          name: build-${{ matrix.short_name }}
           path: ${{ env.FLATPAK_BUILD }}
           retention-days: 1
 
@@ -96,9 +101,8 @@ jobs:
       - build_jobs
     strategy:
       matrix:
-        full_names: ${{ fromJson(needs.build_jobs.outputs.full_names) }}
-        short_names: ${{ fromJson(needs.build_jobs.outputs.short_names) }}
-    name: Export ${{ matrix.short_names }}
+        include: ${{ fromJson(needs.build_jobs.outputs.names_map) }}
+    name: Export ${{ matrix.short_name }}
     runs-on: larga-serv
     steps:
       - name: Import GPG-key
@@ -111,27 +115,27 @@ jobs:
       - name: Download flatpak build artifact
         uses: actions/download-artifact@v3
         with:
-          name: build-${{ matrix.short_names }}
-          path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_names }}
+          name: build-${{ env.SHORT_NAME }}
+          path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Export flatpak build
         run: |
           set -e
           mkdir -p ${{ env.NGINX_REPO }}/repo
-          flatpak build-finish ${{ env.FLATPAK_BUILD }}-${{ matrix.short_names }}
-          flatpak build-export --disable-sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_names }}
+          flatpak build-finish ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          flatpak build-export --disable-sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Delete flatpak build dir
         if: always()
         run: |
           set -e
-          rm -rf ${{ env.FLATPAK_BUILD }}-${{ matrix.short_names }}
+          rm -rf ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Delete flatpak build artifact
         if: always()
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: build-${{ matrix.short_names }}
+          name: build-${{ matrix.short_name }}
 
   build_repo:
     runs-on: larga-serv
