@@ -37,6 +37,12 @@ jobs:
           rm -rf io.github.tdesktop_x64.TDesktop io.github.grisha765.DavinciResolve io.github.grisha765.Photoshop
           files=$(find . -type f -name '*.yml' -not -path './.github/*' | xargs -n 1 basename | sed 's/\.yml$//' | jq -R -s -c 'split("\n")[:-1]')
           echo "files=$files" >> $GITHUB_OUTPUT
+
+      - name: Upload files.json
+        uses: actions/upload-artifact@v3
+        with:
+          name: files
+          path: files.json
       
   build_manifest:
     needs: build_jobs
@@ -99,9 +105,8 @@ jobs:
       - name: Download all flatpak repos
         run: |
           set -e
-          files=${{ needs.build_jobs.outputs.names }}
+          files=${{ toJSON(needs.build_jobs.outputs.names) }}
           echo $files
-          echo ${{ env.files }}
           for file in $(echo $files | jq -r '.[]'); do
             echo "Downloading repo-${file}..."
             gh run download --name "repo-${file}" --dir ./combined_repo/${file}
