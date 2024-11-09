@@ -115,7 +115,7 @@ jobs:
       - name: Download flatpak build artifact
         uses: actions/download-artifact@v3
         with:
-          name: build-${{ env.SHORT_NAME }}
+          name: build-${{ matrix.short_name }}
           path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Export flatpak build
