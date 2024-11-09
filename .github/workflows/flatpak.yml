@@ -12,86 +12,153 @@ name: CI
 
 env:
     PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+    NGINX_REPO_URL: 192.168.88.88:8086/
     FLATPAK_HISTORY_LEN: 0
     FLATPAK_DELTAS: true
-     
+
     FLATPAK_BUILD: build-dir
     PAGES_REPO: repo-dir
+    NGINX_REPO: /usr/share/nginx/html
 
 jobs:
-  build:
+  build_jobs:
+    runs-on: ubuntu-latest
+    outputs:
+      names: ${{ steps.find_manifests.outputs.files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find Flatpak manifests
+        id: find_manifests
+        run: |
+          rm -rf io.github.tdesktop_x64.TDesktop
+          files=$(find . -type f -name '*.yml' -not -path './.github/*' | xargs -n 1 basename | sed 's/\.yml$//' | jq -R -s -c 'split("\n")[:-1]')
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+  build_manifest:
+    needs: build_jobs
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.build_jobs.outputs.names) }}
     runs-on: ubuntu-latest
     steps:
-    - name: Maximize build space
-      uses: easimon/maximize-build-space@master
-      with:
-        root-reserve-mb: 10240
-        swap-size-mb: 1024
-        remove-dotnet: 'true'
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
 
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
 
-    - name: Import GPG-key
-      id: gpg-key
-      uses: crazy-max/ghaction-import-gpg@v5
-      with:
-        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-        passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Import GPG-key
+        id: gpg-key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-    - name: Prepare GPG-pubkey
-      run: |
+      - name: Install flatpak
+        run: |
+          set -e
+          sudo apt update -y
+          sudo apt install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+      
+      - name: Build Flatpak with flatpak-builder
+        run: |
+          set -e
+          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.file }}/${{ matrix.file }}.yml"
+          flatpak-builder --delete-build-dirs --build-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }} "${{ matrix.file }}/${{ matrix.file }}.yml"
+          rm -rf ${{ env.FLATPAK_BUILD }}/var
+
+      - name: Upload flatpak package
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-${{ matrix.file }}
+          path: ${{ env.FLATPAK_BUILD }}
+          retention-days: 1
+
+  build_export:
+    needs: 
+      - build_manifest
+      - build_jobs
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.build_jobs.outputs.names) }}
+    runs-on: larga-serv
+    steps:
+      - name: Import GPG-key
+        id: gpg-key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Download flatpak build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-${{ matrix.file }}
+          path: ${{ env.FLATPAK_BUILD }}-${{ matrix.file }}
+
+      - name: Export flatpak build
+        run: |
+          set -e
+          mkdir -p ${{ env.NGINX_REPO }}/repo
+          flatpak build-finish ${{ env.FLATPAK_BUILD }}-${{ matrix.file }}
+          flatpak build-export --disable-sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.file }}
+
+      - name: Delete flatpak build dir
+        if: always()
+        run: |
+          set -e
+          rm -rf ${{ env.FLATPAK_BUILD }}-${{ matrix.file }}
+
+      - name: Delete flatpak build artifact
+        if: always()
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ env.FLATPAK_BUILD }}-${{ matrix.file }}
+
+  build_repo:
+    runs-on: larga-serv
+    needs: 
+      - build_manifest
+      - build_jobs
+      - build_export
+    steps:
+      - name: Import GPG-key
+        id: gpg-key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Prepare GPG-pubkey
+        run: |
           set -e
           gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
-    - name: Install flatpak
-      run: |
-        set -e
-        sudo apt update -y
-        sudo apt install -y flatpak flatpak-builder
-        flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-    
-    - name: Build Flatpak with flatpak-builder
-      run: |
-        set -e
-        git config --global protocol.file.allow always
-        mkdir -p ./${{ env.PAGES_REPO }}/repo
-        find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
-          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
-          flatpak-builder --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
-        done
-    
-    - name: Create Flatpak repository metadata
-      run: |
-        set -e
-        mkdir -p ./${{ env.PAGES_REPO }}/repo/refs/remotes ./${{ env.PAGES_REPO }}/repo/refs/mirrors
-        touch ./${{ env.PAGES_REPO }}/repo/refs/remotes/.gitkeep ./${{ env.PAGES_REPO }}/repo/refs/mirrors/.gitkeep
-        flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./${{ env.PAGES_REPO }}/repo
-        flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./${{ env.PAGES_REPO }}/repo
-
-    - name: Write .flatpakrepo file
-      run: |
+      - name: Create Flatpak repository metadata
+        run: |
           set -e
-          cat > ${{ env.PAGES_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
+          mkdir -p ${{ env.NGINX_REPO }}/repo/refs/remotes ${{ env.NGINX_REPO }}/repo/refs/mirrors
+          touch ${{ env.NGINX_REPO }}/repo/refs/remotes/.gitkeep ${{ env.NGINX_REPO }}/repo/refs/mirrors/.gitkeep
+          flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ${{ env.NGINX_REPO }}/repo
+          flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ${{ env.NGINX_REPO }}/repo
+
+      - name: Write .flatpakrepo file
+        run: |
+          set -e
+          cat > ${{ env.NGINX_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
           [Flatpak Repo]
-          Title=${{ env.PAGES_REPO_URL }}
-          Url=https://${{ env.PAGES_REPO_URL }}repo/
+          Title=${{ env.NGINX_REPO_URL }}
+          Url=http://${{ env.NGINX_REPO_URL }}repo/
           GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
           EOF
-
-    - name: Upload flatpak repo
-      uses: actions/upload-artifact@v3
-      with:
-        name: repo
-        path: ${{ env.PAGES_REPO }}
-
-  deploy:
-    runs-on: larga-serv
-    needs: build
-    steps:
-    - name: Download flatpak repo
-      uses: actions/download-artifact@v3
-      with:
-        name: repo
-        path: /usr/share/nginx/html
