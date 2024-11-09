@@ -123,7 +123,7 @@ jobs:
           set -e
           mkdir -p ${{ env.NGINX_REPO }}/repo
           flatpak build-finish ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
-          flatpak build-export --disable-sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Delete flatpak build dir
         if: always()
