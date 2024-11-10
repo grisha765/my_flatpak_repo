@@ -106,6 +106,12 @@ jobs:
     name: Export ${{ matrix.short_name }}
     runs-on: larga-serv
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
       - name: Import GPG-key
         id: gpg-key
         uses: crazy-max/ghaction-import-gpg@v5
@@ -119,11 +125,19 @@ jobs:
           name: build-${{ matrix.short_name }}
           path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
+      - name: Install flatpak
+        run: |
+          set -e
+          sudo apt update -y
+          sudo apt install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
       - name: Export flatpak build
         run: |
           set -e
           mkdir -p ${{ env.NGINX_REPO }}/repo
-          flatpak build-finish ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
+          flatpak-builder --delete-build-dirs --finish-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Delete flatpak build dir
