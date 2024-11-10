@@ -71,13 +71,6 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Install flatpak
-        run: |
-          set -e
-          sudo apt update -y
-          sudo apt install -y flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-      
       - name: Build Flatpak with flatpak-builder
         run: |
           set -e
@@ -123,13 +116,6 @@ jobs:
         with:
           name: build-${{ matrix.short_name }}
           path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
-
-      - name: Install flatpak
-        run: |
-          set -e
-          sudo apt update -y
-          sudo apt install -y flatpak flatpak-builder
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
       - name: Export flatpak build
         run: |
