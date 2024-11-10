@@ -58,13 +58,6 @@ jobs:
       image: bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
       options: --privileged
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 10240
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-
       - name: Checkout code
         uses: actions/checkout@v4
         with:
