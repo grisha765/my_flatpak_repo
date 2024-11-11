@@ -74,6 +74,7 @@ jobs:
       - name: Build Flatpak with flatpak-builder
         run: |
           set -e
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           flatpak-builder --delete-build-dirs --build-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           rm -rf ${{ env.FLATPAK_BUILD }}/var
@@ -121,6 +122,7 @@ jobs:
         run: |
           set -e
           mkdir -p ${{ env.NGINX_REPO }}/repo
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           flatpak-builder --delete-build-dirs --finish-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
