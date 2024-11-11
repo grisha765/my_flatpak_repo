@@ -103,6 +103,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+          clean: false
           fetch-depth: 1
 
       - name: Import GPG-key
@@ -140,11 +141,14 @@ jobs:
           name: build-${{ matrix.short_name }}
 
   build_repo:
-    runs-on: larga-serv
     needs: 
       - build_manifest
       - build_jobs
       - build_export
+    runs-on: larga-serv
+    container:
+      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
+      options: --privileged
     steps:
       - name: Import GPG-key
         id: gpg-key
@@ -152,12 +156,6 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Install flatpak
-        run: |
-          set -e
-          sudo apt update -y
-          sudo apt install -y flatpak flatpak-builder
 
       - name: Prepare GPG-pubkey
         run: |
@@ -167,11 +165,22 @@ jobs:
       - name: Create Flatpak repository metadata
         run: |
           set -e
+          mkdir -p ./repo/refs/remotes ./repo/refs/mirrors
+          touch ./repo/refs/remotes/.gitkeep ./repo/refs/mirrors/.gitkeep
+          flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./repo
+          flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./repo
+
+  export_repo:
+    runs-on: larga-serv
+    needs: 
+      - build_manifest
+      - build_jobs
+      - build_export
+      - build_repo
+    steps:
+      - name: Moving repo
+        run: |
           mv ./repo ${{ env.NGINX_REPO }}/repo
-          mkdir -p ${{ env.NGINX_REPO }}/repo/refs/remotes ${{ env.NGINX_REPO }}/repo/refs/mirrors
-          touch ${{ env.NGINX_REPO }}/repo/refs/remotes/.gitkeep ${{ env.NGINX_REPO }}/repo/refs/mirrors/.gitkeep
-          flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ${{ env.NGINX_REPO }}/repo
-          flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ${{ env.NGINX_REPO }}/repo
 
       - name: Write .flatpakrepo file
         run: |
