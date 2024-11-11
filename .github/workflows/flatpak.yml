@@ -125,7 +125,7 @@ jobs:
           flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
           flatpak-builder --delete-build-dirs --finish-only --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ./repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
 
       - name: Delete flatpak build dir
         if: always()
@@ -161,6 +161,7 @@ jobs:
       - name: Create Flatpak repository metadata
         run: |
           set -e
+          mv ./repo ${{ env.NGINX_REPO }}/repo
           mkdir -p ${{ env.NGINX_REPO }}/repo/refs/remotes ${{ env.NGINX_REPO }}/repo/refs/mirrors
           touch ${{ env.NGINX_REPO }}/repo/refs/remotes/.gitkeep ${{ env.NGINX_REPO }}/repo/refs/mirrors/.gitkeep
           flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ${{ env.NGINX_REPO }}/repo
