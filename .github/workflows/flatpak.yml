@@ -153,6 +153,12 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
+      - name: Install flatpak
+        run: |
+          set -e
+          sudo apt update -y
+          sudo apt install -y flatpak flatpak-builder
+
       - name: Prepare GPG-pubkey
         run: |
           set -e
