@@ -55,7 +55,7 @@ jobs:
     name: Build ${{ matrix.short_name }}
     runs-on: ubuntu-latest
     container:
-      image: bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
+      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
       options: --privileged
     steps:
       - name: Checkout code
@@ -96,7 +96,7 @@ jobs:
     name: Export ${{ matrix.short_name }}
     runs-on: larga-serv
     container:
-      image: bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
+      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
       options: --privileged
     steps:
       - name: Checkout code
