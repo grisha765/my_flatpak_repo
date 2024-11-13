@@ -64,12 +64,19 @@ jobs:
           submodules: true
           fetch-depth: 1
 
+      - name: Import GPG-key
+        id: gpg-key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
       - name: Build Flatpak with flatpak-builder
         run: |
           set -e
           flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          flatpak-builder --force-clean --delete-build-dirs --sandbox --disable-updates --repo=./repo-${{ matrix.short_name }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
+          flatpak-builder --force-clean --delete-build-dirs --sandbox --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./repo-${{ matrix.short_name }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
 
       - name: Packing tar archive
         run: |
