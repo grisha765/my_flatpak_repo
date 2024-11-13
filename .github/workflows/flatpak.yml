@@ -114,7 +114,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: repo-${{ matrix.short_name }}
-          path: repo-${{ matrix.short_name }}.tar
+          path: ./
 
       - name: Extract tar archive
         run: |
@@ -140,11 +140,11 @@ jobs:
         env:
           REPO_NAME: ./repo-${{ matrix.short_name }}
 
-      - name: Delete flatpak repo dir
+      - name: Delete flatpak repo dir and tar ball
         if: always()
         run: |
           set -e
-          rm -rf ./repo-${{ matrix.short_name }}
+          rm -rf ./repo-${{ matrix.short_name }}*
 
       - name: Delete flatpak repo artifact
         if: always()
