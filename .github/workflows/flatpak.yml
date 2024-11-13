@@ -99,23 +99,18 @@ jobs:
         include: ${{ fromJson(needs.build_jobs.outputs.names_map) }}
     name: Export ${{ matrix.short_name }}
     runs-on: larga-serv
-    container:
-      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
-      options: --privileged
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          submodules: true
-          clean: false
-          fetch-depth: 1
-
       - name: Import GPG-key
         id: gpg-key
         uses: crazy-max/ghaction-import-gpg@v5
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Prepare GPG-pubkey
+        run: |
+          set -e
+          gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
       - name: Download flatpak repo artifact
         uses: actions/download-artifact@v3
@@ -132,7 +127,7 @@ jobs:
         run: |
           set -e
           if [ ! -d "./repo" ]; then
-              ostree init --mode=archive-z2 --repo=./repo
+              ostree init --mode=archive-z2 --repo=${{ env.NGINX_REPO }}/repo
           else
               echo "Repository repo already exists. Skipping initialization."
           fi
@@ -142,7 +137,7 @@ jobs:
           set -e
           ostree refs --repo=$REPO_NAME
           for ref in $(ostree refs --repo=$REPO_NAME); do
-              ostree pull-local $REPO_NAME $ref --repo=./repo
+              ostree pull-local $REPO_NAME $ref --repo=${{ env.NGINX_REPO }}/repo
           done
         env:
           REPO_NAME: ./repo-${{ matrix.short_name }}
@@ -159,47 +154,22 @@ jobs:
         with:
           name: repo-${{ matrix.short_name }}
 
-  update_repo:
+  sign_repo:
     needs: 
       - build_jobs
       - build_manifest
       - combine_repo
     runs-on: larga-serv
-    container:
-      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
-      options: --privileged
     steps:
-      - name: Import GPG-key
-        id: gpg-key
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Prepare GPG-pubkey
-        run: |
-          set -e
-          gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
-
       - name: Create Flatpak repository metadata
         run: |
           set -e
-          mkdir -p ./repo/refs/remotes ./repo/refs/mirrors
-          touch ./repo/refs/remotes/.gitkeep ./repo/refs/mirrors/.gitkeep
-          flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./repo
-          flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./repo
-
-  tranfer_repo:
-    runs-on: larga-serv
-    needs: 
-      - build_jobs
-      - build_manifest
-      - combine_repo
-      - update_repo
-    steps:
-      - name: Moving repo
-        run: |
-          mv ./repo ${{ env.NGINX_REPO }}/repo
+          mkdir -p $REPO_NAME/refs/remotes $REPO_NAME/refs/mirrors
+          touch $REPO_NAME/refs/remotes/.gitkeep $REPO_NAME/refs/mirrors/.gitkeep
+          flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} $REPO_NAME
+          flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas $REPO_NAME
+        env:
+          REPO_NAME: ${{ env.NGINX_REPO }}/repo
 
       - name: Write .flatpakrepo file
         run: |
