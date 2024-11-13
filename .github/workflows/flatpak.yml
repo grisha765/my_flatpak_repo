@@ -36,7 +36,7 @@ jobs:
       - name: Find Flatpak manifests
         id: find_manifests
         run: |
-          rm -rf io.github.tdesktop_x64.TDesktop
+          rm -rf io.github.tdesktop_x64.TDesktop io.github.grisha765.DavinciResolve io.github.grisha765.Photoshop
           full_names=$(find . -type f -name '*.yml' -not -path './.github/*' | xargs -n 1 basename | sed 's/\.yml$//' | jq -R -s -c 'split("\n")[:-1]')
           short_names=$(echo "$full_names" | jq -r '.[] | split(".") | last' | jq -R -s -c 'split("\n")[:-1]')
           names_map=$(jq -n \
@@ -76,20 +76,19 @@ jobs:
           set -e
           flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          flatpak-builder --delete-build-dirs --build-only --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          rm -rf ${{ env.FLATPAK_BUILD }}/var
+          flatpak-builder --force-clean --delete-build-dirs --sandbox --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./repo-${{ matrix.short_name }} ${{ env.FLATPAK_BUILD }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
 
-      - name: Upload flatpak package
+      - name: Upload flatpak repo
         uses: actions/upload-artifact@v3
         with:
-          name: build-${{ matrix.short_name }}
-          path: ${{ env.FLATPAK_BUILD }}
+          name: repo-${{ matrix.short_name }}
+          path: ./repo-${{ matrix.short_name }}
           retention-days: 1
 
-  build_export:
+  combine_repo:
     needs: 
-      - build_manifest
       - build_jobs
+      - build_manifest
     strategy:
       matrix:
         include: ${{ fromJson(needs.build_jobs.outputs.names_map) }}
@@ -113,38 +112,45 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Download flatpak build artifact
+      - name: Download flatpak repo artifact
         uses: actions/download-artifact@v3
         with:
-          name: build-${{ matrix.short_name }}
-          path: ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          name: repo-${{ matrix.short_name }}
+          path: ./repo-${{ matrix.short_name }}
 
-      - name: Export flatpak build
+      - name: Init repo
         run: |
           set -e
-          mkdir -p ${{ env.NGINX_REPO }}/repo
-          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          flatpak-builder --delete-build-dirs --finish-only --disable-updates --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }} "${{ matrix.full_name }}/${{ matrix.full_name }}.yml"
-          flatpak build-export --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} ./repo ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          if [ ! -d "./repo" ]; then
+              ostree init --mode=archive-z2 --repo=./repo
+          else
+              echo "Repository repo already exists. Skipping initialization."
+          fi
 
-      - name: Delete flatpak build dir
+      - name: Repo combine
+        run: |
+          set -e
+          for ref in $(ostree refs --repo=./repo-${{ matrix.short_name }}); do
+              ostree pull-local ./repo-${{ matrix.short_name }} $ref --repo=./repo
+          done
+
+      - name: Delete flatpak repo dir
         if: always()
         run: |
           set -e
-          rm -rf ${{ env.FLATPAK_BUILD }}-${{ matrix.short_name }}
+          rm -rf ./repo-${{ matrix.short_name }}
 
-      - name: Delete flatpak build artifact
+      - name: Delete flatpak repo artifact
         if: always()
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: build-${{ matrix.short_name }}
+          name: repo-${{ matrix.short_name }}
 
-  build_repo:
+  update_repo:
     needs: 
-      - build_manifest
       - build_jobs
-      - build_export
+      - build_manifest
+      - combine_repo
     runs-on: larga-serv
     container:
       image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
@@ -170,13 +176,13 @@ jobs:
           flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./repo
           flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./repo
 
-  export_repo:
+  tranfer_repo:
     runs-on: larga-serv
     needs: 
-      - build_manifest
       - build_jobs
-      - build_export
-      - build_repo
+      - build_manifest
+      - combine_repo
+      - update_repo
     steps:
       - name: Moving repo
         run: |
