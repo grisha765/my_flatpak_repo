@@ -53,9 +53,6 @@ jobs:
         include: ${{ fromJson(needs.build_jobs.outputs.names_map) }}
     name: Build ${{ matrix.short_name }}
     runs-on: ubuntu-latest
-    container:
-      image: docker.io/bilelmoussaoui/flatpak-github-actions:freedesktop-23.08
-      options: --privileged
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
