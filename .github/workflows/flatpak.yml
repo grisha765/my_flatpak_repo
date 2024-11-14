@@ -134,7 +134,6 @@ jobs:
       - name: Repo combine
         run: |
           set -e
-          ostree refs --repo=$REPO_NAME
           for ref in $(ostree refs --repo=$REPO_NAME); do
               ostree pull-local $REPO_NAME $ref --repo=${{ env.NGINX_REPO }}/repo
           done
