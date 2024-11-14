@@ -54,6 +54,13 @@ jobs:
     name: Build ${{ matrix.short_name }}
     runs-on: ubuntu-latest
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 10240
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -66,6 +73,14 @@ jobs:
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Install flatpak
+        run: |
+          set -e
+          sudo add-apt-repository ppa:flatpak/stable
+          sudo apt update -y
+          sudo apt install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
       - name: Build Flatpak with flatpak-builder
         run: |
