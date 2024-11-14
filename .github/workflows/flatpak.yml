@@ -36,7 +36,6 @@ jobs:
       - name: Find Flatpak manifests
         id: find_manifests
         run: |
-          rm -rf io.github.tdesktop_x64.TDesktop io.github.grisha765.DavinciResolve io.github.grisha765.Photoshop
           full_names=$(find . -type f -name '*.yml' -not -path './.github/*' | xargs -n 1 basename | sed 's/\.yml$//' | jq -R -s -c 'split("\n")[:-1]')
           short_names=$(echo "$full_names" | jq -r '.[] | split(".") | last' | jq -R -s -c 'split("\n")[:-1]')
           names_map=$(jq -n \
