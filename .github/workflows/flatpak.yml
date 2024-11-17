@@ -53,7 +53,6 @@ jobs:
       run: |
         set -e
         git config --global protocol.file.allow always
-        rm -rf io.github.tdesktop_x64.TDesktop
         mkdir -p ${{ env.NGINX_REPO }}/repo
         find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
