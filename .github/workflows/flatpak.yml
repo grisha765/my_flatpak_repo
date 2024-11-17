@@ -12,7 +12,7 @@ name: CI
 
 env:
     PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
-    NGINX_REPO_URL: 192.168.88.88:8086/
+    NGINX_REPO_URL: ergolyam.line.pm/flatpak/
     FLATPAK_HISTORY_LEN: 0
     FLATPAK_DELTAS: true
     FLATPAK_JOBS: 6
@@ -74,6 +74,6 @@ jobs:
           cat > ${{ env.NGINX_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
           [Flatpak Repo]
           Title=${{ env.NGINX_REPO_URL }}
-          Url=http://${{ env.NGINX_REPO_URL }}repo/
+          Url=https://${{ env.NGINX_REPO_URL }}repo/
           GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
           EOF
