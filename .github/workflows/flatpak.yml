@@ -12,27 +12,23 @@ name: CI
 
 env:
     PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+    NGINX_REPO_URL: 192.168.88.88:8086/
     FLATPAK_HISTORY_LEN: 0
     FLATPAK_DELTAS: true
+    FLATPAK_JOBS: 6
      
     FLATPAK_BUILD: build-dir
     PAGES_REPO: repo-dir
+    NGINX_REPO: /usr/share/nginx/html
 
 jobs:
   flatpak:
-    name: "Flatpak"
-    runs-on: ubuntu-latest
+    runs-on: larga-serv
     steps:
-    - name: Maximize build space
-      uses: easimon/maximize-build-space@master
-      with:
-        root-reserve-mb: 10240
-        swap-size-mb: 1024
-        remove-dotnet: 'true'
-
     - uses: actions/checkout@v4
       with:
         submodules: true
+        fetch-depth: 1
 
     - name: Import GPG-key
       id: gpg-key
@@ -57,35 +53,27 @@ jobs:
       run: |
         set -e
         git config --global protocol.file.allow always
-        mkdir -p ./${{ env.PAGES_REPO }}/repo
+        rm -rf io.github.tdesktop_x64.TDesktop
+        mkdir -p ${{ env.NGINX_REPO }}/repo
         find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
           flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
-          flatpak-builder --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=./${{ env.PAGES_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
+          flatpak-builder --ccache --jobs=${{ env.FLATPAK_JOBS }} --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
         done
     
     - name: Create Flatpak repository metadata
       run: |
         set -e
-        mkdir -p ./${{ env.PAGES_REPO }}/repo/refs/remotes ./${{ env.PAGES_REPO }}/repo/refs/mirrors
-        touch ./${{ env.PAGES_REPO }}/repo/refs/remotes/.gitkeep ./${{ env.PAGES_REPO }}/repo/refs/mirrors/.gitkeep
-        flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ./${{ env.PAGES_REPO }}/repo
-        flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ./${{ env.PAGES_REPO }}/repo
+        mkdir -p ${{ env.NGINX_REPO }}/repo/refs/remotes ${{ env.NGINX_REPO }}/repo/refs/mirrors
+        touch ${{ env.NGINX_REPO }}/repo/refs/remotes/.gitkeep ${{ env.NGINX_REPO }}/repo/refs/mirrors/.gitkeep
+        flatpak build-update-repo --no-update-summary --prune --prune-depth=${{ env.FLATPAK_HISTORY_LEN }} ${{ env.NGINX_REPO }}/repo
+        flatpak build-update-repo --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --gpg-import=pubkey.gpg --generate-static-deltas ${{ env.NGINX_REPO }}/repo
 
     - name: Write .flatpakrepo file
       run: |
           set -e
-          cat > ${{ env.PAGES_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
+          cat > ${{ env.NGINX_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
           [Flatpak Repo]
-          Title=${{ env.PAGES_REPO_URL }}
-          Url=https://${{ env.PAGES_REPO_URL }}repo/
+          Title=${{ env.NGINX_REPO_URL }}
+          Url=http://${{ env.NGINX_REPO_URL }}repo/
           GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
           EOF
-
-    - name: Deploy Repo
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.PAGES_REPO }}
-          enable_jekyll: true
-          force_orphan: true
-
