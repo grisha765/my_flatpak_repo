@@ -1,7 +1,11 @@
+name: Build target
 on:
   push:
     branches:
       - io.github.tdesktop_x64.TDesktop
+    paths-ignore:
+      - '.github/**'
+      - 'readme.md'
   workflow_dispatch:
 
 jobs:
