@@ -39,6 +39,7 @@ jobs:
       with:
         submodules: true
         fetch-depth: 1
+        ref: ${{ steps.branch.outputs.branch }}
 
     - name: Import GPG-key
       id: gpg-key
