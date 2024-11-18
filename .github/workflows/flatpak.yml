@@ -1,4 +1,10 @@
 on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+
   workflow_dispatch:
     inputs:
       branch:
@@ -29,7 +35,7 @@ jobs:
         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
           echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
         else
-          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ inputs.branch }}" >> $GITHUB_OUTPUT
         fi
 
     - uses: actions/checkout@v4
