@@ -8,14 +8,11 @@ on:
 name: Build manifest
 
 env:
-    PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     NGINX_REPO_URL: ergolyam.line.pm/flatpak/
     FLATPAK_HISTORY_LEN: 0
-    FLATPAK_DELTAS: true
     FLATPAK_JOBS: 6
      
     FLATPAK_BUILD: build-dir
-    PAGES_REPO: repo-dir
     NGINX_REPO: /usr/share/nginx/html
 
 jobs:
