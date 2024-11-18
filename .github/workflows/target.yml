@@ -1,7 +1,11 @@
+name: Build target
 on:
   push:
     branches:
       - io.github.grisha765.DavinciResolve
+    paths-ignore:
+      - '.github/**'
+      - 'readme.md'
   workflow_dispatch:
 
 jobs:
