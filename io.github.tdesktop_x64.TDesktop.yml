@@ -112,8 +112,8 @@ modules:
       - install -D systemd-detect-virt "$FLATPAK_DEST/bin"
     sources:
       - type: archive
-        url: https://github.com/systemd/systemd/archive/v256.7/systemd-256.7.tar.gz
-        sha256: 896d76ff65c88f5fd9e42f90d152b0579049158a163431dd77cdc57748b1d7b0
+        url: https://github.com/systemd/systemd/archive/v256.8/systemd-256.8.tar.gz
+        sha256: b3d003b4f6d1ab0bfae0cf7a37c4aa559923c49bc8e9d1331b7459e12ebc357a
         x-checker-data:
           type: json
           url: https://api.github.com/repos/systemd/systemd/releases/latest
@@ -254,8 +254,8 @@ modules:
       - -DWITH_EXAMPLES=OFF
     sources:
       - type: archive
-        url: https://github.com/strukturag/libheif/archive/v1.19.2/libheif-1.19.2.tar.gz
-        sha256: c5caaed602e68799e2f4cebc243730505912d45a14ee8d650fccc7258507524a
+        url: https://github.com/strukturag/libheif/archive/v1.19.3/libheif-1.19.3.tar.gz
+        sha256: 3f3b482a5e88b27ba5a10e8bca3309ad9d76ceb9f2f4eef22d390c6ddbd5a2e0
         x-checker-data:
           type: json
           url: https://api.github.com/repos/strukturag/libheif/releases/latest
@@ -442,8 +442,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/TDesktop-x64/tdesktop.git
-        commit: 6e06e42f8e61eac201bfed7f7d8924ba53b275a8
-        tag: v1.1.46
+        commit: 98e625351adf476ae13d40821708cf4870188cdd
+        tag: v1.1.48
         x-checker-data:
           type: json
           url: https://api.github.com/repos/TDesktop-x64/tdesktop/releases
