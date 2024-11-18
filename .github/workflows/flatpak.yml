@@ -1,14 +1,15 @@
 on:
   push:
-    branches: [main]
-    paths:
-      - '**/*.yml'
-  pull_request:
-    paths:
-      - '**/*.yml'
+    branches-ignore: 
+      - main
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Select manifest'
+        required: true
+        default: 'io.github.grisha765.Hello'
 
-name: CI
+name: Build manifest
 
 env:
     PAGES_REPO_URL: ${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
@@ -25,6 +26,15 @@ jobs:
   flatpak:
     runs-on: larga-serv
     steps:
+    - name: Determine Branch
+      id: branch
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
+        else
+          echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        fi
+
     - uses: actions/checkout@v4
       with:
         submodules: true
@@ -39,8 +49,8 @@ jobs:
 
     - name: Prepare GPG-pubkey
       run: |
-          set -e
-          gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
+        set -e
+        gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
     - name: Install flatpak
       run: |
@@ -54,10 +64,10 @@ jobs:
         set -e
         git config --global protocol.file.allow always
         mkdir -p ${{ env.NGINX_REPO }}/repo
-        find . -type f -name '*.yml' -not -path './.github/*' -print0 | while IFS= read -r -d '' file; do
-          flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$file"
-          flatpak-builder --ccache --jobs=${{ env.FLATPAK_JOBS }} --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$file"
-        done
+        flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$FILE"
+        flatpak-builder --ccache --jobs=${{ env.FLATPAK_JOBS }} --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$FILE"
+      env:
+        FILE: ${{ steps.branch.outputs.branch }}.yml
     
     - name: Create Flatpak repository metadata
       run: |
@@ -69,10 +79,10 @@ jobs:
 
     - name: Write .flatpakrepo file
       run: |
-          set -e
-          cat > ${{ env.NGINX_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
-          [Flatpak Repo]
-          Title=${{ env.NGINX_REPO_URL }}
-          Url=https://${{ env.NGINX_REPO_URL }}repo/
-          GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
-          EOF
+        set -e
+        cat > ${{ env.NGINX_REPO }}/${{ github.repository_owner }}.flatpakrepo << EOF 
+        [Flatpak Repo]
+        Title=${{ env.NGINX_REPO_URL }}
+        Url=https://${{ env.NGINX_REPO_URL }}repo/
+        GPGKey=$(cat pubkey.gpg | base64 --wrap=0)"
+        EOF
