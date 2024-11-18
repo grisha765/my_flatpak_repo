@@ -4,13 +4,21 @@ on:
       branch:
         required: true
         type: string
+      jobs:
+        required: true
+        type: string
+    secrets:
+      GPG_PRIVATE_KEY:
+        required: true
+      GPG_PASSPHRASE:
+        required: true
 
 name: Build manifest
 
 env:
     NGINX_REPO_URL: ergolyam.line.pm/flatpak/
     FLATPAK_HISTORY_LEN: 0
-    FLATPAK_JOBS: 6
+    FLATPAK_JOBS: ${{ inputs.jobs }}
      
     FLATPAK_BUILD: build-dir
     NGINX_REPO: /usr/share/nginx/html
@@ -19,20 +27,11 @@ jobs:
   flatpak:
     runs-on: larga-serv
     steps:
-    - name: Determine Branch
-      id: branch
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-          echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
-        else
-          echo "branch=${{ inputs.branch }}" >> $GITHUB_OUTPUT
-        fi
-
     - uses: actions/checkout@v4
       with:
         submodules: true
         fetch-depth: 1
-        ref: ${{ steps.branch.outputs.branch }}
+        ref: ${{ inputs.branch }}
 
     - name: Import GPG-key
       id: gpg-key
@@ -61,7 +60,7 @@ jobs:
         flatpak-builder --install-deps-from=flathub --install-deps-only --user /dev/null "$FILE"
         flatpak-builder --ccache --jobs=${{ env.FLATPAK_JOBS }} --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$FILE"
       env:
-        FILE: ${{ steps.branch.outputs.branch }}.yml
+        FILE: ${{ inputs.branch }}.yml
     
     - name: Create Flatpak repository metadata
       run: |
