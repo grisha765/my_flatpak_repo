@@ -254,8 +254,8 @@ modules:
       - -DWITH_EXAMPLES=OFF
     sources:
       - type: archive
-        url: https://github.com/strukturag/libheif/archive/v1.19.3/libheif-1.19.3.tar.gz
-        sha256: 3f3b482a5e88b27ba5a10e8bca3309ad9d76ceb9f2f4eef22d390c6ddbd5a2e0
+        url: https://github.com/strukturag/libheif/archive/v1.19.4/libheif-1.19.4.tar.gz
+        sha256: db3d13203f3cb11ccbee67c868fb21ebb734ce1cccc02c9823808a3582d1f0f8
         x-checker-data:
           type: json
           url: https://api.github.com/repos/strukturag/libheif/releases/latest
@@ -442,8 +442,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/TDesktop-x64/tdesktop.git
-        commit: 98e625351adf476ae13d40821708cf4870188cdd
-        tag: v1.1.48
+        commit: 5558bce7f9459f5e735b2af03f4afda9edbc8e7d
+        tag: v1.1.49
         x-checker-data:
           type: json
           url: https://api.github.com/repos/TDesktop-x64/tdesktop/releases
