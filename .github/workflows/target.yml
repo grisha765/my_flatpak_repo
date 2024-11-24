@@ -1,8 +1,8 @@
 name: Build target
 on:
   push:
-    branches:
-      - io.github.tdesktop_x64.TDesktop
+    branches-ignore:
+      - main
     paths-ignore:
       - '.github/**'
       - 'readme.md'
