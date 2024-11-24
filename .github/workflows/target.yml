@@ -2,7 +2,7 @@ name: Build target
 on:
   push:
     branches:
-      - io.github.grisha765.Hello
+      - org.cataclysmdda.CataclysmDDA
     paths-ignore:
       - '.github/**'
       - 'readme.md'
