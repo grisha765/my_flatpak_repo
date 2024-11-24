@@ -1,0 +1,19 @@
+name: Build target
+on:
+  push:
+    branches-ignore:
+      - main
+    paths-ignore:
+      - '.github/**'
+      - 'readme.md'
+  workflow_dispatch:
+
+jobs:
+  cd:
+    uses: grisha765/my_flatpak_repo/.github/workflows/flatpak.yml@main
+    with:
+      branch: ${{ github.ref_name }}
+      jobs: 6
+    secrets:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
