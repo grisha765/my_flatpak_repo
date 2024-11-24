@@ -1,8 +1,8 @@
 name: Build target
 on:
   push:
-    branches:
-      - io.github.grisha765.DavinciResolve
+    branches-ignore:
+      - main
     paths-ignore:
       - '.github/**'
       - 'readme.md'
