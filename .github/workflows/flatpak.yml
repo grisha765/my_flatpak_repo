@@ -45,6 +45,11 @@ jobs:
         set -e
         gpg --export ${{ steps.gpg-key.outputs.fingerprint }} > pubkey.gpg
 
+    - name: Add ppa
+      run: |
+        set -e
+        sudo add-ppa ppa:flatpak/stable
+
     - name: Install flatpak
       run: |
         set -e
