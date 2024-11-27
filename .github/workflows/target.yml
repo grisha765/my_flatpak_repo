@@ -7,12 +7,16 @@ on:
       - '.github/**'
       - 'readme.md'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Update commit and push"]
+    types:
+      - completed
 
 jobs:
   cd:
     uses: grisha765/my_flatpak_repo/.github/workflows/flatpak.yml@main
     with:
-      branch: ${{ github.ref_name }}
+      branch: ${{ github.event.workflow_run.head_branch }}
       jobs: 6
     secrets:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
