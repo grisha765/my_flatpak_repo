@@ -4,9 +4,8 @@ env:
   FILE: ${{ github.ref_name }}.yml
 
 on:
-  push:
-    branches-ignore:
-      - main
+  schedule:
+    - cron: '0 7 * * *'
 
 jobs:
   commit-and-push:
