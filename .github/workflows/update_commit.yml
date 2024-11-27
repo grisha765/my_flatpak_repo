@@ -1,0 +1,36 @@
+name: Update commit and push
+
+env:
+  FILE: ${{ github.ref_name }}.yml
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  commit-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup git user
+        uses: fregante/setup-git-user@v2
+
+      - name: Update commit
+        run: |
+          source .github/set_commit.sh
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_NAME: ${{ env.FILE }}
+
+      - name: Make changes to the repository
+        run: |
+          git add ${{ env.FILE }}
+          git commit -m "[u] ${{ env.TAG_NAME }}"
+
+      - name: Push changes to org.cataclysmdda.CataclysmDDA branch
+        run: |
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/grisha765/my_flatpak_repo.git HEAD:${{ github.ref_name }}
