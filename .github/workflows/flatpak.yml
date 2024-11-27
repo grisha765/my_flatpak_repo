@@ -69,6 +69,13 @@ jobs:
         flatpak-builder --ccache --jobs=${{ env.FLATPAK_JOBS }} --force-clean --disable-updates --sandbox --gpg-sign=${{ steps.gpg-key.outputs.fingerprint }} --repo=${{ env.NGINX_REPO }}/repo ${{ env.FLATPAK_BUILD }} "$FILE"
       env:
         FILE: ${{ inputs.branch }}.yml
+
+    - name: Remove git cache
+      if: failure()
+      working-directory: ./${{ inputs.branch }}
+      run: |
+        set -e
+        rm -rfv .flatpak-builder/git/*
     
     - name: Create Flatpak repository metadata
       run: |
