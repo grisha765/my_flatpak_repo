@@ -249,8 +249,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/libjxl/libjxl.git
-        commit: 4df1e9eccdf86b8df4c0c7c08f529263906f9c4f
-        tag: v0.11.0
+        commit: 794a5dcf0d54f9f0b20d288a12e87afb91d20dfc
+        tag: v0.11.1
         x-checker-data:
           type: json
           url: https://api.github.com/repos/libjxl/libjxl/releases/latest
@@ -408,8 +408,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/TDesktop-x64/tdesktop.git
-        commit: 6ab74f9d4671bc664050a8612e7f30c15c95658a
-        tag: v1.1.50
+        commit: af22eed1e89d579dd9a2e2f01d2dc8c0cf2703b5
+        tag: v1.1.51
         x-checker-data:
           type: json
           url: https://api.github.com/repos/TDesktop-x64/tdesktop/releases
