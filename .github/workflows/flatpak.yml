@@ -31,7 +31,9 @@ jobs:
       with:
         submodules: true
         fetch-depth: 1
+        clean: false
         ref: ${{ inputs.branch }}
+        path: ./${{ inputs.branch }}
 
     - name: Import GPG-key
       id: gpg-key
@@ -58,6 +60,7 @@ jobs:
         flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     
     - name: Build Flatpak with flatpak-builder
+      working-directory: ./${{ inputs.branch }}
       run: |
         set -e
         git config --global protocol.file.allow always
