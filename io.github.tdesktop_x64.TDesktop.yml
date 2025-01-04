@@ -91,8 +91,8 @@ modules:
           type: pypi
           name: MarkupSafe
       - type: file
-        url: https://files.pythonhosted.org/packages/ed/55/39036716d19cab0747a5020fc7e907f362fbf48c984b14e62127f7e68e5d/jinja2-3.1.4.tar.gz
-        sha256: 4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369
+        url: https://files.pythonhosted.org/packages/af/92/b3130cbbf5591acf9ade8708c365f3238046ac7cb8ccba6e81abccb0ccff/jinja2-3.1.5.tar.gz
+        sha256: 8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb
         x-checker-data:
           type: pypi
           name: Jinja2
@@ -112,8 +112,8 @@ modules:
       - install -D systemd-detect-virt "$FLATPAK_DEST/bin"
     sources:
       - type: archive
-        url: https://github.com/systemd/systemd/archive/v256.9/systemd-256.9.tar.gz
-        sha256: 9f2bda967a30ec4602e7ea93d565eb43670ca1dffbb808c72758d5f0213508c8
+        url: https://github.com/systemd/systemd/archive/v257.1/systemd-257.1.tar.gz
+        sha256: 375365b9f3718ba5fc2a972445eefcd9e229cc18bffe95818220c2a52efe8ed9
         x-checker-data:
           type: json
           url: https://api.github.com/repos/systemd/systemd/releases/latest
@@ -172,8 +172,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/protocolbuffers/protobuf.git
-        commit: 796e49f6ca82f763d1087d2ff7355d2f0d7b71b1
-        tag: v29.1
+        commit: 233098326bc268fc03b28725c941519fc77703e6
+        tag: v29.2
         x-checker-data:
           type: json
           url: https://api.github.com/repos/protocolbuffers/protobuf/releases/latest
@@ -408,8 +408,8 @@ modules:
     sources:
       - type: git
         url: https://github.com/TDesktop-x64/tdesktop.git
-        commit: 7ba4039db03f61d2670d30631b69605baee88e08
-        tag: v1.1.53
+        commit: cd610a96bfb3a67aa5ff7371536be6dce1cb05c9
+        tag: v1.1.52
         x-checker-data:
           type: json
           url: https://api.github.com/repos/TDesktop-x64/tdesktop/releases
