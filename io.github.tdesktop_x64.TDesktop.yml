@@ -135,7 +135,7 @@ modules:
     sources:
       - type: archive
         url: https://boostorg.jfrog.io/artifactory/main/release/1.86.0/source/boost_1_86_0.tar.bz2
-        sha256: 1bed88e40401b2cb7a1f76d4bab499e352fa4d0c5f31c0dbae64e24d34d7513b
+        sha256: 79e6d3f986444e5a80afbeccdaf2d1c1cf964baa8d766d20859d653a16c39848
         x-checker-data:
           type: anitya
           project-id: 6845
